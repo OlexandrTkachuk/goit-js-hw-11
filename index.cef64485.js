@@ -1,0 +1,2 @@
+const e={form:document.querySelector(".search-form"),input:document.querySelector('input[name="searchQuery"]'),searchBtn:document.querySelector(".search-form button"),gallery:document.querySelector(".gallery .container"),loadMoreBtn:document.querySelector(".load-more")};e.form.addEventListener("submit",(function(e){e.preventDefault()})),e.loadMoreBtn.addEventListener("click",(function(e){}));
+//# sourceMappingURL=index.cef64485.js.map
