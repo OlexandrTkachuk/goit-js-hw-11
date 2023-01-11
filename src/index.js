@@ -1,61 +1,97 @@
-// import { refs } from './js/refs';
-// import { fetchImages } from './js/fetch';
-// import {
-//   renderMarkup,
-//   clearMarkup,
-//   addLoadMoreBtnHidden,
-//   removeLoadMoreBtnHidden,
-// } from './js/render';
+import { refs } from './js/refs';
+import { fetchImages } from './js/fetch';
+import {
+  renderMarkup,
+  clearMarkup,
+  isHiddenLoadMoreBtn,
+  isVisibleLoadMoreBtn,
+} from './js/render';
+import { autoScroll } from './js/autoscroll';
 
-const refs = {
-  form: document.querySelector('.search-form'),
-  input: document.querySelector('input[name="searchQuery"]'),
-  searchBtn: document.querySelector('.search-form button'),
-  gallery: document.querySelector('.gallery .container'),
-  loadMoreBtn: document.querySelector('.load-more'),
-};
+// --- import notify library ---
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import 'notiflix/dist/notiflix-3.2.5.min.css';
+
+// --- import simpleLightBox libruary---
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
+
+// -- main code ---
+isHiddenLoadMoreBtn();
+
+let query = ''; // дефолтне значення інпуту
+let page = 1; // дефолтне значення сторінки
 
 refs.form.addEventListener('submit', onFormSubmit);
 refs.loadMoreBtn.addEventListener('click', onLoadMoreBtnClick);
 
-function onFormSubmit(event) {
-  event.preventDefault();
-}
-
-function onLoadMoreBtnClick(event) {}
-
-function renderMarkup(array) {
+async function onFormSubmit(event) {
+  event.preventDefault(); // прибираємо перезавантаження сторінки
   clearMarkup();
+  query = event.currentTarget.elements.searchQuery.value; // отримауєо значення інпуту
 
-  const markup = array.map(({}) => ``).join('');
-  return markup;
+  if (query) {
+    try {
+      const response = await fetchImages(query, (page = 1));
+      // якщо отримали пустий масив  - нотіфікашка -->
+      if (response.data.hits.length === 0) {
+        clearMarkup(); //очистка
+        Notify.warning(
+          'Sorry, there are no images matching your search query. Please try again.'
+        ); // нотіфікашка
+      }
+      // рендер + нотішікашка + видима кнопка пагінації -->
+      else {
+        refs.gallery.insertAdjacentHTML(
+          'beforeend',
+          renderMarkup(response.data.hits)
+        ); // рендер
+        Notify.success(`"Hooray! We found ${response.data.totalHits} images."`); // нотіфікашка
+        lightbox.refresh(); // бібліотека simpleLightBox
+
+        if (response.data.totalHits > 40) {
+          isVisibleLoadMoreBtn(); // видима кнопка, якшо кількіть знайдених картинок більше 40
+        } else {
+          isHiddenLoadMoreBtn();
+        }
+      }
+    } catch (error) {
+      Notify.failure(error);
+      clearMarkup();
+    } // ловимо помилку}
+  } else {
+    Notify.warning('Please start typing.'); // якщо нічого не було введено
+  }
 }
 
-function fetchImages(searchQuery, page) {
-  const url = ``;
-  const options = {
-    headers: {
-      Authorization: '',
-    },
-  };
+async function onLoadMoreBtnClick() {
+  page += 1;
 
-  return fetch(url, options).then(response => {
-    if (!response.ok) {
-      throw new Error(response.statusText);
+  try {
+    const response = await fetchImages(query, page);
+    const totalPages = response.data.totalHits / 40; // отримуємо значення максимальої кількості сторінок
+
+    if (totalPages < page) {
+      isHiddenLoadMoreBtn();
+      Notify.warning(
+        "We're sorry, but you've reached the end of search results."
+      );
+    } else {
+      refs.gallery.insertAdjacentHTML(
+        'beforeend',
+        renderMarkup(response.data.hits)
+      ); // рендер розмітки за сторінками += 1;
+      lightbox.refresh(); // бібліотека simpleLightBox
     }
-
-    return response.json();
-  });
+  } catch (error) {
+    Notify.failure(error);
+    clearMarkup();
+  }
 }
 
-function clearMarkup() {
-  refs.gallery.innerHTMLq = '';
-}
-
-function addLoadMoreBtnHidden() {
-  refs.loadMoreBtn.classList.add('visually-hidden');
-}
-
-function removeLoadMoreBtnHidden() {
-  refs.loadMoreBtn.classList.remove('visually-hidden');
-}
+const lightbox = new SimpleLightbox('.gallery a', {
+  captions: true,
+  captionsData: 'alt',
+  captionPosition: 'bottom',
+  captionDelay: 250,
+});
