@@ -1,2 +1,0 @@
-!function(){var e={};Object.defineProperty(e,"__esModule",{value:!0}),e.default=function(e){throw e};var r={form:document.querySelector(".search-form"),input:document.querySelector('input[name="searchQuery"]'),searchBtn:document.querySelector(".search-form button"),gallery:document.querySelector(".gallery .container"),loadMoreBtn:document.querySelector(".load-more")};r.form.addEventListener("submit",(function(e){e.preventDefault()})),r.loadMoreBtn.addEventListener("click",(function(e){}))}();
-//# sourceMappingURL=index.db8db041.js.map
